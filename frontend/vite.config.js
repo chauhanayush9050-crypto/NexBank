@@ -16,6 +16,9 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+  allowedHosts: ['nexbank-frontend.onrender.com']
+},
   build: {
     outDir: 'dist',
     sourcemap: false,
