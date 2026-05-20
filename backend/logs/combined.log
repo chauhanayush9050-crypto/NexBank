@@ -1119,3 +1119,5 @@
 {"level":"info","message":"POST /api/auth/forgot-password 200 1255ms - ::1","service":"nexbank-api","timestamp":"2026-05-20T13:06:46.137Z"}
 {"level":"info","message":"POST /api/auth/reset-password 200 594ms - ::1","service":"nexbank-api","timestamp":"2026-05-20T13:07:12.984Z"}
 {"level":"info","message":"POST /api/auth/login 403 17ms - ::1","service":"nexbank-api","timestamp":"2026-05-20T13:07:31.084Z"}
+{"level":"info","message":"Running cron: Process scheduled payments","service":"nexbank-api","timestamp":"2026-05-20T13:30:00.062Z"}
+{"level":"info","message":"Processed 0 scheduled payments","service":"nexbank-api","timestamp":"2026-05-20T13:30:00.088Z"}
