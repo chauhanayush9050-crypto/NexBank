@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt.js');
+const bcrypt = require('bcryptjs');
 const {
   User, Account, Transaction, Card, Beneficiary, Loan,
   FixedDeposit, RecurringDeposit, Bill, ScheduledPayment,
