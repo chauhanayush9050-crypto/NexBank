@@ -34,11 +34,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://nexbank-forntend.onrender.com/',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'https://nexbank-forntend.onrender.com/',
         ws: true,
       },
     },
