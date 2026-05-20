@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .stop-sign-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stop-sign {
+            width: 280px;
+            height: 280px;
+            position: relative;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .stop-sign svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 30px rgba(255, 0, 0, 0.5)) drop-shadow(0 0 60px rgba(255, 0, 0, 0.3));
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 0, 0, 0.5)) drop-shadow(0 0 60px rgba(255, 0, 0, 0.3)); }
+            50% { filter: drop-shadow(0 0 50px rgba(255, 0, 0, 0.8)) drop-shadow(0 0 100px rgba(255, 0, 0, 0.5)); }
+        }
+
+        .stop-sign svg {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .text-stop {
+            font-family: 'Oswald', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.15em;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            margin-top: 2rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 50, 50, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Road lines */
+        .road {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 35vh;
+            background: #2a2a3e;
+            perspective: 400px;
+            overflow: hidden;
+        }
+
+        .road-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 40px;
+            background: #f5c542;
+            border-radius: 2px;
+            animation: moveDown 1.5s linear infinite;
+        }
+
+        @keyframes moveDown {
+            0% { top: -40px; opacity: 0.8; }
+            100% { top: 100%; opacity: 0.3; }
+        }
+
+        .pole {
+            position: absolute;
+            top: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 120px;
+            background: linear-gradient(to bottom, #888, #555);
+            border-radius: 0 0 4px 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stop-sign-container">
+        <div class="stop-sign">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff1a1a"/>
+                        <stop offset="100%" style="stop-color:#cc0000"/>
+                    </linearGradient>
+                    <filter id="innerShadow">
+                        <feOffset dx="0" dy="2"/>
+                        <feGaussianBlur stdDeviation="2" result="offset-blur"/>
+                        <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+                        <feFlood flood-color="black" flood-opacity="0.3" result="color"/>
+                        <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+                        <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+                    </filter>
+                </defs>
+                <!-- Octagon -->
+                <polygon points="60,5 140,5 195,60 195,140 140,195 60,195 5,140 5,60"
+                         fill="url(#redGrad)" stroke="white" stroke-width="6"
+                         filter="url(#innerShadow)"/>
+                <!-- Inner border -->
+                <polygon points="68,18 132,18 182,68 182,132 132,182 68,182 18,132 18,68"
+                         fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+                <!-- STOP text -->
+                <text x="100" y="115" text-anchor="middle" fill="white"
+                      font-family="Oswald, sans-serif" font-size="52" font-weight="700"
+                      letter-spacing="3">STOP</text>
+            </svg>
+        </div>
+        <div class="pole"></div>
+    </div>
+
+    <p class="subtitle">Take a moment. Breathe. Proceed with care.</p>
+
+    <!-- Road -->
+    <div class="road" id="road"></div>
+
+    <script>
+        // Create road lines
+        const road = document.getElementById('road');
+        for (let i = 0; i < 8; i++) {
+            const line = document.createElement('div');
+            line.className = 'road-line';
+            line.style.animationDelay = `${i * 0.19}s`;
+            road.appendChild(line);
+        }
+
+        // Create floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+            particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
+            particle.style.animationDelay = Math.random() * 2 + 's';
+            particle.style.opacity = Math.random() * 0.5 + 0.2;
+            document.body.appendChild(particle);
+
+            setTimeout(() => particle.remove(), 14000);
+        }
+
+        // Spawn particles periodically
+        setInterval(createParticle, 400);
+
+        // Initial burst
+        for (let i = 0; i < 15; i++) {
+            setTimeout(createParticle, i * 100);
+        }
+
+        // Click interaction — burst of particles
+        document.addEventListener('click', (e) => {
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = e.clientX + 'px';
+                p.style.top = e.clientY + 'px';
+                p.style.width = p.style.height = (Math.random() * 6 + 3) + 'px';
+                p.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                p.style.background = Math.random() > 0.5 ? 'rgba(255,50,50,0.8)' : 'rgba(255,200,50,0.8)';
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 5000);
+            }
+        });
+    </script>
+</body>
+</html>
