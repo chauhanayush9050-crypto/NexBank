@@ -1121,3 +1121,14 @@
 {"level":"info","message":"POST /api/auth/login 403 17ms - ::1","service":"nexbank-api","timestamp":"2026-05-20T13:07:31.084Z"}
 {"level":"info","message":"Running cron: Process scheduled payments","service":"nexbank-api","timestamp":"2026-05-20T13:30:00.062Z"}
 {"level":"info","message":"Processed 0 scheduled payments","service":"nexbank-api","timestamp":"2026-05-20T13:30:00.088Z"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"nexbank-api","timestamp":"2026-05-20T13:50:48.601Z"}
+{"level":"warn","message":"Redis unavailable (ECONNREFUSED) — switching to in-memory store","service":"nexbank-api","timestamp":"2026-05-20T13:50:48.612Z"}
+{"level":"warn","message":"⚠️  Redis unavailable — using in-memory store (Redis connect timeout)","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.620Z"}
+{"level":"info","message":"Cloudinary configured","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.622Z"}
+{"level":"info","message":"Cron jobs initialized","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.647Z"}
+{"level":"info","message":"🚀 NexBank API Server running on port 5000","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.650Z"}
+{"level":"info","message":"📝 Environment: development","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.650Z"}
+{"level":"info","message":"🔗 API: http://localhost:5000/api","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.651Z"}
+{"level":"info","message":"🔌 Socket.io: http://localhost:5000","service":"nexbank-api","timestamp":"2026-05-20T13:50:53.651Z"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"nexbank-api","timestamp":"2026-05-20T13:52:36.550Z"}
+{"level":"warn","message":"Redis unavailable (ECONNREFUSED) — switching to in-memory store","service":"nexbank-api","timestamp":"2026-05-20T13:52:36.586Z"}
