@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,12 +7,9 @@ import { Doughnut } from 'react-chartjs-2';
 import { FiArrowUpRight, FiArrowDownLeft, FiSend, FiCreditCard, FiRefreshCw, FiPlus, FiTrash2, FiCheck, FiAlertCircle, FiLock, FiUnlock, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { fetchSummary, makeTransfer, makeDeposit, makeWithdrawal } from '../store';
-import axios from 'axios';
+import { api as API } from '../lib/api';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
-
-const API = axios.create({ baseURL: '/api', withCredentials: true });
-API.interceptors.request.use(c => { const t = localStorage.getItem('accessToken'); if (t) c.headers.Authorization = `Bearer ${t}`; return c; });
 
 const Stat = ({ icon, label, value, color }) => (
   <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="card p-4 flex items-center gap-4">

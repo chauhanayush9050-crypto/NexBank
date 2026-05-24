@@ -207,12 +207,38 @@ const upload = multer({
 // ============================================
 // Encryption Utilities
 // ============================================
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-32-char-encryption-key!!';
 const IV_LENGTH = parseInt(process.env.AES_IV_LENGTH) || 16;
+
+const getRequiredEnv = (name) => {
+  const value = process.env[name];
+  if (!value || !value.trim()) {
+    throw new Error(`${name} is required for NexBank auth configuration`);
+  }
+  return value.trim();
+};
+
+const getAuthConfig = () => {
+  const jwtSecret = getRequiredEnv('JWT_SECRET');
+  const jwtRefreshSecret = getRequiredEnv('JWT_REFRESH_SECRET');
+  const encryptionKey = getRequiredEnv('ENCRYPTION_KEY');
+  const encryptionKeyBytes = Buffer.byteLength(encryptionKey, 'utf8');
+
+  if (encryptionKeyBytes !== 32) {
+    throw new Error(`ENCRYPTION_KEY must be exactly 32 bytes. Received ${encryptionKeyBytes} bytes.`);
+  }
+
+  return {
+    jwtSecret,
+    jwtRefreshSecret,
+    encryptionKey,
+  };
+};
+
+const getEncryptionKeyBuffer = () => Buffer.from(getAuthConfig().encryptionKey, 'utf8');
 
 const encrypt = (text) => {
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  const cipher = crypto.createCipheriv('aes-256-cbc', getEncryptionKeyBuffer(), iv);
   let encrypted = cipher.update(text);
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   return iv.toString('hex') + ':' + encrypted.toString('hex');
@@ -222,7 +248,7 @@ const decrypt = (text) => {
   const textParts = text.split(':');
   const iv = Buffer.from(textParts.shift(), 'hex');
   const encryptedText = Buffer.from(textParts.join(':'), 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', getEncryptionKeyBuffer(), iv);
   let decrypted = decipher.update(encryptedText);
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();
@@ -566,6 +592,7 @@ module.exports = {
   getRedis,
   configureCloudinary,
   upload,
+  getAuthConfig,
   encrypt,
   decrypt,
   generateOTP,

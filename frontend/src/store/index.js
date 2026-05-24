@@ -1,31 +1,7 @@
 import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { api as API, hydrateStoredAuth, restoreSession, clearAuthStorage } from '../lib/api';
 
-const API = axios.create({ baseURL: '/api', withCredentials: true });
-
-API.interceptors.request.use(c => {
-  const t = localStorage.getItem('accessToken');
-  if (t) c.headers.Authorization = `Bearer ${t}`;
-  return c;
-});
-
-API.interceptors.response.use(r => r, async (error) => {
-  const original = error.config;
-  if (error.response?.status === 401 && !original._retry) {
-    original._retry = true;
-    try {
-      const { data } = await axios.post('/api/auth/refresh-token', {}, { withCredentials: true });
-      localStorage.setItem('accessToken', data.data.accessToken);
-      original.headers.Authorization = `Bearer ${data.data.accessToken}`;
-      return axios(original);
-    } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-  }
-  return Promise.reject(error);
-});
+const storedAuth = hydrateStoredAuth();
 
 // AUTH
 const login = createAsyncThunk('auth/login', async (creds, { rejectWithValue }) => {
@@ -33,6 +9,7 @@ const login = createAsyncThunk('auth/login', async (creds, { rejectWithValue }) 
     const { data } = await API.post('/auth/login', creds);
     if (data.data?.tokens?.accessToken) {
       localStorage.setItem('accessToken', data.data.tokens.accessToken);
+      localStorage.setItem('refreshToken', data.data.tokens.refreshToken || '');
       localStorage.setItem('user', JSON.stringify(data.data.user));
     }
     return data;
@@ -46,6 +23,7 @@ const signup = createAsyncThunk('auth/signup', async (userData, { rejectWithValu
     const { data } = await API.post('/auth/signup', userData);
     if (data.data?.tokens?.accessToken) {
       localStorage.setItem('accessToken', data.data.tokens.accessToken);
+      localStorage.setItem('refreshToken', data.data.tokens.refreshToken || '');
       localStorage.setItem('user', JSON.stringify(data.data.user));
     }
     return data;
@@ -55,15 +33,24 @@ const signup = createAsyncThunk('auth/signup', async (userData, { rejectWithValu
   }
 });
 
+const restoreAuthSession = createAsyncThunk('auth/restoreSession', async (_, { rejectWithValue }) => {
+  try {
+    return await restoreSession();
+  } catch (error) {
+    return rejectWithValue(error?.response?.data?.message || error?.message || 'Session restore failed');
+  }
+});
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
-    accessToken: localStorage.getItem('accessToken'),
-    isAuthenticated: !!localStorage.getItem('accessToken'),
+    user: storedAuth.user,
+    accessToken: storedAuth.accessToken,
+    isAuthenticated: !!storedAuth.accessToken && !!storedAuth.user,
     loading: false,
     error: null,
     signupData: null,
+    restoringSession: false,
   },
   reducers: {
     logout: (state) => {
@@ -71,8 +58,9 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.isAuthenticated = false;
       state.signupData = null;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
+      state.restoringSession = false;
+      clearAuthStorage();
+      localStorage.removeItem('refreshToken');
     },
     setUser: (state, action) => { state.user = action.payload; state.isAuthenticated = true; },
     clearError: (state) => { state.error = null; },
@@ -95,7 +83,22 @@ const authSlice = createSlice({
         s.accessToken = a.payload.data?.tokens?.accessToken;
         s.signupData = a.payload.data;
       })
-      .addCase(signup.rejected, (s, a) => { s.loading = false; s.error = a.payload; });
+      .addCase(signup.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
+      .addCase(restoreAuthSession.pending, (s) => {
+        s.restoringSession = true;
+      })
+      .addCase(restoreAuthSession.fulfilled, (s, a) => {
+        s.restoringSession = false;
+        s.isAuthenticated = true;
+        s.user = a.payload.user;
+        s.accessToken = a.payload.accessToken;
+      })
+      .addCase(restoreAuthSession.rejected, (s) => {
+        s.restoringSession = false;
+        s.isAuthenticated = false;
+        s.user = null;
+        s.accessToken = null;
+      });
   },
 });
 
@@ -189,7 +192,7 @@ export const { clearTxError } = txSlice.actions;
 export const { addNotification, setUnreadCount } = notifSlice.actions;
 export const { toggleTheme } = themeSlice.actions;
 
-export { login, signup, fetchSummary, fetchTransactions, makeTransfer, makeDeposit, makeWithdrawal, fetchNotifications };
+export { login, signup, restoreAuthSession, fetchSummary, fetchTransactions, makeTransfer, makeDeposit, makeWithdrawal, fetchNotifications };
 
 export const store = configureStore({
   reducer: { auth: authSlice.reducer, account: accountSlice.reducer, transactions: txSlice.reducer, notifications: notifSlice.reducer, theme: themeSlice.reducer },

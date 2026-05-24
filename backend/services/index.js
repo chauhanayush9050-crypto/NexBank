@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
-const { logger, getRedis, encrypt } = require('../config');
+const { logger, getRedis, encrypt, getAuthConfig } = require('../config');
 const { Notification, AuditLog } = require('../models');
 
 // ============================================
@@ -226,6 +226,8 @@ const auditLog = async (userId, action, category, severity, details, req) => {
 // TOKEN GENERATION
 // ============================================
 const generateTokens = (user) => {
+  const { jwtSecret, jwtRefreshSecret } = getAuthConfig();
+
   const accessToken = jwt.sign(
     {
       userId: user._id,
@@ -233,13 +235,13 @@ const generateTokens = (user) => {
       role: user.role,
       is2FAEnabled: user.is2FAEnabled
     },
-    process.env.JWT_SECRET,
+    jwtSecret,
     { expiresIn: process.env.JWT_EXPIRY || '15m' }
   );
 
   const refreshToken = jwt.sign(
     { userId: user._id, tokenVersion: Date.now() },
-    process.env.JWT_REFRESH_SECRET,
+    jwtRefreshSecret,
     { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
   );
 

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiPhone, FiEye, FiEyeOff, FiArrowLeft, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { login, signup, clearError } from '../store';
-import axios from 'axios';
+import { api as API } from '../lib/api';
 
 // ============================================
 // SHARED INPUT COMPONENT — icons never overlap text
@@ -70,9 +70,10 @@ const LoginForm = ({ isAdmin }) => {
 
     try {
       if (isAdmin) {
-        const { data } = await axios.post('/api/auth/admin-login', form);
+        const { data } = await API.post('/auth/admin-login', form);
         if (data.success && data.data?.tokens?.accessToken) {
           localStorage.setItem('accessToken', data.data.tokens.accessToken);
+          localStorage.setItem('refreshToken', data.data.tokens.refreshToken || '');
           localStorage.setItem('user', JSON.stringify(data.data.user));
           dispatch({ type: 'auth/login/fulfilled', payload: data });
           toast.success('Welcome, Admin!');
@@ -86,6 +87,7 @@ const LoginForm = ({ isAdmin }) => {
         return;
       }
     } catch (err) {
+      console.error("LOGIN ERROR:", err);
       const msg = err?.response?.data?.message || err?.message || (isAdmin ? 'Admin login failed' : 'Login failed');
       toast.error(msg);
     } finally {
@@ -369,7 +371,7 @@ const ForgotForm = () => {
     if (loading || !email) return;
     setLoading(true);
     try {
-      const { data } = await axios.post('/api/auth/forgot-password', { email });
+      const { data } = await API.post('/auth/forgot-password', { email });
       if (data.userId) setUserId(data.userId);
       toast.success('OTP sent to your email');
       setStep(2);
@@ -395,7 +397,7 @@ const ForgotForm = () => {
     if (!newPassword) return toast.error('Enter new password');
     setLoading(true);
     try {
-      await axios.post('/api/auth/reset-password', { userId, otp: otp.join(''), newPassword, confirmPassword: newPassword });
+      await API.post('/auth/reset-password', { userId, otp: otp.join(''), newPassword, confirmPassword: newPassword });
       toast.success('Password reset! Redirecting to login...');
       setTimeout(() => { window.location.href = '/login'; }, 1000);
     } catch (err) {

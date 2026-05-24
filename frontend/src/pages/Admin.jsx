@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiUsers, FiDollarSign, FiAlertTriangle, FiCheck, FiX, FiSearch, FiEye, FiLock, FiUnlock, FiShield, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-
-const API = axios.create({ baseURL: '/api', withCredentials: true });
-API.interceptors.request.use(c => { const t = localStorage.getItem('accessToken'); if (t) c.headers.Authorization = `Bearer ${t}`; return c; });
+import { api as API } from '../lib/api';
 
 const Stat = ({ icon: Icon, label, value, color }) => (
   <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="card p-4 flex items-center gap-4">

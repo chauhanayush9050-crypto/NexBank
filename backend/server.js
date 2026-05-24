@@ -9,9 +9,17 @@ const cookieParser = require('cookie-parser');
 const expressMongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
 
-const { logger, connectDB, connectRedis, configureCloudinary } = require('./config');
+const { logger, connectDB, connectRedis, configureCloudinary, getAuthConfig } = require('./config');
 const { errorHandler, notFound, requestLogger, securityHeaders, sanitizeInput, generalLimiter } = require('./middleware');
 const routes = require('./routes');
+
+const defaultClientUrl = 'https://nexbank-frontend.onrender.com';
+const allowedOrigins = Array.from(new Set([
+  process.env.CLIENT_URL || defaultClientUrl,
+  defaultClientUrl,
+  'http://localhost:3000',
+  'http://localhost:5173'
+]));
 
 // Initialize Express
 const app = express();
@@ -22,7 +30,7 @@ const server = http.createServer(app);
 // ============================================
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -67,11 +75,7 @@ app.use(securityHeaders);
 
 // CORS
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || 'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:5173'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-csrf-token']
@@ -118,6 +122,12 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    if (!process.env.CLIENT_URL) {
+      logger.warn(`CLIENT_URL not set. Defaulting to ${defaultClientUrl}`);
+    }
+
+    getAuthConfig();
+
     // Connect to MongoDB
     await connectDB();
 

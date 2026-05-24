@@ -2,7 +2,8 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FiMenu, FiBell, FiSun, FiMoon, FiLogOut, FiSettings, FiX, FiHome, FiUsers, FiShield, FiCreditCard, FiDollarSign, FiBarChart2, FiFileText, FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
-import { toggleTheme, fetchNotifications, logout as logoutAction } from './store';
+import { motion } from 'framer-motion';
+import { toggleTheme, fetchNotifications, logout as logoutAction, restoreAuthSession } from './store';
 import { fetchSummary } from './store';
 
 const Auth = lazy(() => import('./pages/Auth'));
@@ -171,16 +172,28 @@ const Navbar = ({ onMenuClick, user, isAdmin }) => {
 // ============================================
 export default function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector(s => s.auth);
+  const { isAuthenticated, user, accessToken, restoringSession } = useSelector(s => s.auth);
   const { mode } = useSelector(s => s.theme);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const [restoreAttempted, setRestoreAttempted] = useState(false);
 
   useEffect(() => { document.documentElement.setAttribute('data-theme', mode); }, [mode]);
+  useEffect(() => {
+    if (!restoreAttempted && (accessToken || localStorage.getItem('refreshToken'))) {
+      setRestoreAttempted(true);
+      dispatch(restoreAuthSession());
+    }
+  }, [accessToken, dispatch, restoreAttempted]);
   useEffect(() => { if (isAuthenticated) { dispatch(fetchNotifications()); } }, [isAuthenticated, dispatch]);
+  useEffect(() => { if (isAuthenticated && user?.role === 'USER') { dispatch(fetchSummary()); } }, [isAuthenticated, user?.role, dispatch]);
   useEffect(() => { setSidebarOpen(false); }, [location]);
 
   const isAdmin = location.pathname.startsWith('/admin');
+
+  if (restoringSession) {
+    return <Loading />;
+  }
 
   return (
     <Suspense fallback={<Loading />}>

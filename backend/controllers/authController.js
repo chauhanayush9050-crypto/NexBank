@@ -19,6 +19,15 @@ const maskCardForResponse = (card) => {
   const last4 = obj.cardLast4 || (/^\d{16}$/.test(obj.cardNumber || '') ? obj.cardNumber.slice(-4) : '****');
   return { ...obj, cardNumber: `XXXX XXXX XXXX ${last4}` };
 };
+const getAuthCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+};
 
 // ============================================
 // SIGNUP — Always role: USER, auto-generate everything
@@ -216,12 +225,28 @@ exports.login = async (req, res, next) => {
     if (loginOtpEmail.success) logger.info('Login OTP email sent:', { userId: user._id, email: user.email });
     else logger.warn('Login OTP delivery failed:', { userId: user._id, email: user.email, error: emailFailureMessage(loginOtpEmail) });
 
-    const { accessToken, refreshToken } = generateTokens(user);
+    let accessToken;
+    let refreshToken;
+    try {
+      ({ accessToken, refreshToken } = generateTokens(user));
+    } catch (err) {
+      logger.error('Login token generation failed:', err);
+      console.error("LOGIN ERROR:", err);
+      throw err;
+    }
     const sessionId = uuidv4();
     await storeSession(user._id.toString(), sessionId, { device: req.headers['user-agent'], ip, loginAt: new Date() });
-    await User.updateOne({ _id: user._id }, { lastLogin: new Date(), lastLoginIP: ip, refreshToken: encrypt(refreshToken) });
+    let encryptedRefreshToken;
+    try {
+      encryptedRefreshToken = encrypt(refreshToken);
+    } catch (err) {
+      logger.error('Login refresh token encryption failed:', err);
+      console.error("LOGIN ERROR:", err);
+      throw err;
+    }
+    await User.updateOne({ _id: user._id }, { lastLogin: new Date(), lastLoginIP: ip, refreshToken: encryptedRefreshToken });
 
-    const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 };
+    const cookieOpts = getAuthCookieOptions();
     res.cookie('refreshToken', refreshToken, cookieOpts);
     res.cookie('sessionId', sessionId, cookieOpts);
 
@@ -237,7 +262,7 @@ exports.login = async (req, res, next) => {
       message: loginOtpEmail.success ? 'Login successful. OTP sent to your email.' : `Login successful, but OTP email failed: ${emailFailureMessage(loginOtpEmail)}`,
       data: { user: fullUser, account, cards: cards.map(maskCardForResponse), kyc: kyc ? { status: kyc.status, level: kyc.level } : { status: 'NOT_STARTED', level: 0 }, tokens: { accessToken, refreshToken }, sessionId, loginOtpSent: loginOtpEmail.success }
     });
-  } catch (error) { logger.error('Login error:', error); next(error); }
+  } catch (error) { logger.error('Login error:', error); console.error("LOGIN ERROR:", error); next(error); }
 };
 
 // ============================================
@@ -271,12 +296,28 @@ exports.adminLogin = async (req, res, next) => {
     await resetLoginAttempts(ip, `admin:${email}`);
     await User.updateOne({ _id: user._id }, { loginAttempts: 0, $unset: { lockUntil: 1 }, lastLogin: new Date(), lastLoginIP: ip });
 
-    const { accessToken, refreshToken } = generateTokens(user);
+    let accessToken;
+    let refreshToken;
+    try {
+      ({ accessToken, refreshToken } = generateTokens(user));
+    } catch (err) {
+      logger.error('Admin login token generation failed:', err);
+      console.error("LOGIN ERROR:", err);
+      throw err;
+    }
     const sessionId = uuidv4();
     await storeSession(user._id.toString(), sessionId, { device: req.headers['user-agent'], ip, loginAt: new Date(), isAdmin: true });
-    await User.updateOne({ _id: user._id }, { refreshToken: encrypt(refreshToken) });
+    let encryptedRefreshToken;
+    try {
+      encryptedRefreshToken = encrypt(refreshToken);
+    } catch (err) {
+      logger.error('Admin login refresh token encryption failed:', err);
+      console.error("LOGIN ERROR:", err);
+      throw err;
+    }
+    await User.updateOne({ _id: user._id }, { refreshToken: encryptedRefreshToken });
 
-    const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 };
+    const cookieOpts = getAuthCookieOptions();
     res.cookie('refreshToken', refreshToken, cookieOpts);
     res.cookie('sessionId', sessionId, cookieOpts);
 
@@ -289,7 +330,7 @@ exports.adminLogin = async (req, res, next) => {
       message: 'Admin login successful',
       data: { user: fullUser, tokens: { accessToken, refreshToken }, sessionId }
     });
-  } catch (error) { logger.error('Admin login error:', error); next(error); }
+  } catch (error) { logger.error('Admin login error:', error); console.error("LOGIN ERROR:", error); next(error); }
 };
 
 // ============================================
@@ -326,7 +367,7 @@ exports.refreshToken = async (req, res, next) => {
     if (storedToken !== token) return res.status(401).json({ success: false, message: 'Token mismatch' });
     const { accessToken, refreshToken: newRT } = generateTokens(user);
     await User.updateOne({ _id: user._id }, { refreshToken: encrypt(newRT) });
-    const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 };
+    const cookieOpts = getAuthCookieOptions();
     res.cookie('refreshToken', newRT, cookieOpts);
     res.json({ success: true, data: { accessToken, refreshToken: newRT } });
   } catch (error) { next(error); }
